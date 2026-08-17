@@ -1,0 +1,42 @@
+[Defines]
+	INF_VERSION     =  0x00010005
+	VERSION_STRING  =  1.0
+	BASE_NAME       =  PciUtil
+	MODULE_TYPE     =  UEFI_APPLICATION
+	FILE_GUID       =  1C1843F9-50DB-4003-BF09-B1B4B9873E3D
+	ENTRY_POINT     =  PciUtilEntryPoint
+
+[Sources]
+  PciUtil.c
+  CliParser.c
+  CliParser.h
+  PciTree.c
+  PciTree.h
+  PciConfigAccess.c
+  PciConfigAccess.h
+  RegisterDump.c
+  RegisterDump.h
+  PciIdNames.c
+  PciIdNames.h
+
+[Packages]
+  MdePkg/MdePkg.dec
+  MdeModulePkg/MdeModulePkg.dec
+  ShellPkg/ShellPkg.dec
+
+[LibraryClasses]
+  UefiLib
+  UefiBootServicesTableLib
+  UefiApplicationEntryPoint
+  IoLib
+  ShellLib
+  PciLib
+  BaseMemoryLib
+  MemoryAllocationLib
+
+[Guids]
+  gEfiAcpi20TableGuid
+  gEfiAcpiTableGuid
+
+[Depex]
+TRUE

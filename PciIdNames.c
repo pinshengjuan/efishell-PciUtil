@@ -1,4 +1,4 @@
-#include "PCI.h"
+#include "PciIdNames.h"
 
 CHAR16 *PciVendorName(UINT16 Vendor)
 {
