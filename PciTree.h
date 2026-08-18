@@ -8,7 +8,7 @@
 #include "PciConfigAccess.h"
 
 typedef struct _NODE {
-  UINT16          Segment;
+  UINT16          Seg;
   UINT8           Bus;
   UINT8           Dev;
   UINT8           Fun;
@@ -59,10 +59,10 @@ PciTreeWalk (
 BOOLEAN
 IsPcieDevice (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun
   );
 
 /**
@@ -72,17 +72,17 @@ IsPcieDevice (
 
   @param  SegmentTable  Segment/ECAM info, used for reads beyond legacy CF8 range.
   @param  SubtreeHead   On return, the head of the NextSibling chain of devices
-                         found directly on BusNum (their descendants, if any,
+                         found directly on Bus (their descendants, if any,
                          hang off each node's FirstChild).
-  @param  Segment       The PCI Segment Group to scan.
-  @param  BusNum        The bus number to scan.
+  @param  Seg           The PCI Segment Group to scan.
+  @param  Bus           The bus number to scan.
 **/
 VOID
 ScanPciBus (
   IN     CONST PCI_SEGMENT_TABLE  *SegmentTable,
   OUT    NODE                     **SubtreeHead,
-  IN     UINT16                   Segment,
-  IN     UINT8                    BusNum
+  IN     UINT16                   Seg,
+  IN     UINT8                    Bus
   );
 
 /**

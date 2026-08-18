@@ -87,10 +87,10 @@ DumpRegisterTable (
 VOID
 DisplayDeviceName (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum,
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun,
   IN UINT32                   IndentNum,
   IN BOOLEAN                  IsPcie
   )
@@ -98,7 +98,7 @@ DisplayDeviceName (
   CHAR16  *Vendorname;
   UINT32  i;
 
-  Vendorname = PciVendorName (PciCfgRead16 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x00));
+  Vendorname = PciVendorName (PciCfgRead16 (SegmentTable, Seg, Bus, Dev, Fun, 0x00));
 
   for (i = 0; i < IndentNum; i++) {
     Print (L"  ");
@@ -112,24 +112,24 @@ DisplayDeviceName (
   // Class Code is the DWORD at offset 0x08 (Revision ID, ProgIf, SubClass, BaseClass).
   Print (
     L"%s %s",
-    PciClassName (PciCfgRead32 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x08)),
-    PciTypeName (PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x0B))
+    PciClassName (PciCfgRead32 (SegmentTable, Seg, Bus, Dev, Fun, 0x08)),
+    PciTypeName (PciCfgRead8 (SegmentTable, Seg, Bus, Dev, Fun, 0x0B))
     );
 
   if (IsPcie) {
     Print (L"(PCIE)");
   }
 
-  Print (L" (Seg%04X/Bus%02X/Dev%02X/Func%02X)\r\n", Segment, BusNum, DevNum, FuncNum);
+  Print (L" (Seg%04X/Bus%02X/Dev%02X/Fun%02X)\r\n", Seg, Bus, Dev, Fun);
 }
 
 VOID
 DumpDeviceRegisters (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum,
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun,
   IN UINT32                   ReadType,
   IN BOOLEAN                  IsPcie,
   IN BOOLEAN                  ExtendSpace
@@ -142,7 +142,7 @@ DumpDeviceRegisters (
   UINTN   ByteCount;
   BOOLEAN DumpExtended;
 
-  Print (L"Segment: %04X, Bus: %02X, Device: %02X, Function: %02X\r\n", Segment, BusNum, DevNum, FuncNum);
+  Print (L"Segment: %04X, Bus: %02X, Device: %02X, Function: %02X\r\n", Seg, Bus, Dev, Fun);
 
   switch (ReadType) {
     case 8:
@@ -155,12 +155,12 @@ DumpDeviceRegisters (
       }
 
       for (RegNum = 0; RegNum <= 0xFF; RegNum++) {
-        RegArrayByte[RegNum] = PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, (UINT16)RegNum);
+        RegArrayByte[RegNum] = PciCfgRead8 (SegmentTable, Seg, Bus, Dev, Fun, (UINT16)RegNum);
       }
 
       if (DumpExtended) {
         for (RegNum = 0x100; RegNum < 0x1000; RegNum++) {
-          RegArrayByte[RegNum] = PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, (UINT16)RegNum);
+          RegArrayByte[RegNum] = PciCfgRead8 (SegmentTable, Seg, Bus, Dev, Fun, (UINT16)RegNum);
         }
       }
 
@@ -175,7 +175,7 @@ DumpDeviceRegisters (
       }
 
       for (RegNum = 0; RegNum <= 0xFF; RegNum += 2) {
-        RegArrayWord[RegNum / 2] = PciCfgRead16 (SegmentTable, Segment, BusNum, DevNum, FuncNum, (UINT16)RegNum);
+        RegArrayWord[RegNum / 2] = PciCfgRead16 (SegmentTable, Seg, Bus, Dev, Fun, (UINT16)RegNum);
       }
 
       DumpRegisterTable ((UINT8 *)RegArrayWord, 2, 128);
@@ -189,7 +189,7 @@ DumpDeviceRegisters (
       }
 
       for (RegNum = 0; RegNum <= 0xFF; RegNum += 4) {
-        RegArrayDWord[RegNum / 4] = PciCfgRead32 (SegmentTable, Segment, BusNum, DevNum, FuncNum, (UINT16)RegNum);
+        RegArrayDWord[RegNum / 4] = PciCfgRead32 (SegmentTable, Seg, Bus, Dev, Fun, (UINT16)RegNum);
       }
 
       DumpRegisterTable ((UINT8 *)RegArrayDWord, 4, 64);
@@ -206,10 +206,10 @@ DumpDeviceRegisters (
 VOID
 DumpBar (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum,
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun,
   IN BOOLEAN                  IsBridge
   )
 {
@@ -228,21 +228,21 @@ DumpBar (
   if (IsBridge) {
     MaxRegNum = 0x14;
 
-    IoBase  = PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x1C);
-    IoLimit = PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x1D);
+    IoBase  = PciCfgRead8 (SegmentTable, Seg, Bus, Dev, Fun, 0x1C);
+    IoLimit = PciCfgRead8 (SegmentTable, Seg, Bus, Dev, Fun, 0x1D);
     Print (L"I/O Base: %02X ; I/O Limit: %02X\r\n", IoBase, IoLimit);
 
-    MemoryBase  = PciCfgRead16 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x20);
-    MemoryLimit = PciCfgRead16 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x22);
+    MemoryBase  = PciCfgRead16 (SegmentTable, Seg, Bus, Dev, Fun, 0x20);
+    MemoryLimit = PciCfgRead16 (SegmentTable, Seg, Bus, Dev, Fun, 0x22);
     Print (L"Memory Base: %04X ; Memory Limit: %04X\r\n", MemoryBase, MemoryLimit);
 
-    PrefetchMemoryBase  = PciCfgRead16 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x24);
-    PrefetchMemoryLimit = PciCfgRead16 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x26);
+    PrefetchMemoryBase  = PciCfgRead16 (SegmentTable, Seg, Bus, Dev, Fun, 0x24);
+    PrefetchMemoryLimit = PciCfgRead16 (SegmentTable, Seg, Bus, Dev, Fun, 0x26);
     Print (L"Prefetch Memory Base: %04X ; Prefetch_Memory_Limit: %04X\r\n", PrefetchMemoryBase, PrefetchMemoryLimit);
   }
 
   for (RegNum = 0x10; RegNum <= MaxRegNum; RegNum += 4) {
-    BarNum = PciCfgRead32 (SegmentTable, Segment, BusNum, DevNum, FuncNum, (UINT16)RegNum);
+    BarNum = PciCfgRead32 (SegmentTable, Seg, Bus, Dev, Fun, (UINT16)RegNum);
     if (BarNum & 0x1) {
       // Bit 0 = 1: I/O Space
       BarNum &= 0xFFFFFFFC;

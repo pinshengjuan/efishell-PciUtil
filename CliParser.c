@@ -85,17 +85,17 @@ STATIC
 BOOLEAN
 ParseBdf (
   IN  CONST CHAR16  *Str,
-  OUT UINT16        *Segment,
+  OUT UINT16        *Seg,
   OUT UINT8         *Bus,
   OUT UINT8         *Dev,
-  OUT UINT8         *Func
+  OUT UINT8         *Fun
   )
 {
   CONST CHAR16  *Cursor;
   UINT64        Value;
   UINTN         ColonCount;
 
-  *Segment = 0;
+  *Seg = 0;
 
   ColonCount = 0;
   for (Cursor = Str; *Cursor != CHAR_NULL; Cursor++) {
@@ -115,7 +115,7 @@ ParseBdf (
       return FALSE;
     }
 
-    *Segment = (UINT16)Value;
+    *Seg = (UINT16)Value;
   }
 
   if (!ParseHexField (&Cursor, L':', 0xFF, &Value)) {
@@ -134,7 +134,7 @@ ParseBdf (
     return FALSE;
   }
 
-  *Func = (UINT8)Value;
+  *Fun = (UINT8)Value;
 
   return TRUE;
 }
@@ -215,7 +215,7 @@ ParseArguments (
       Print (L"%s: \"all\" requires -r 8, -r 16, or -r 32.\r\n", GetProgramName ());
       Result = PciParseError;
     }
-  } else if (ParseBdf (Param1, &Options->Segment, &Options->Bus, &Options->Dev, &Options->Func)) {
+  } else if (ParseBdf (Param1, &Options->Seg, &Options->Bus, &Options->Dev, &Options->Fun)) {
     Options->Mode = PciCmdSingle;
 
     ReadTypeStr = ShellCommandLineGetValue (Package, L"-r");

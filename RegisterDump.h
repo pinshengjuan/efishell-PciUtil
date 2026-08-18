@@ -9,17 +9,17 @@
 
 /**
   Print one line describing a device: vendor name, class/type, PCIe tag and
-  Seg/Bus/Dev/Func, indented to IndentNum levels.
+  Seg/Bus/Dev/Fun, indented to IndentNum levels.
 
   @param  IsPcie     Whether the device implements the PCI Express Capability.
 **/
 VOID
 DisplayDeviceName (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum,
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun,
   IN UINT32                   IndentNum,
   IN BOOLEAN                  IsPcie
   );
@@ -38,10 +38,10 @@ DisplayDeviceName (
 VOID
 DumpDeviceRegisters (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum,
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun,
   IN UINT32                   ReadType,
   IN BOOLEAN                  IsPcie,
   IN BOOLEAN                  ExtendSpace
@@ -56,10 +56,10 @@ DumpDeviceRegisters (
 VOID
 DumpBar (
   IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN UINT16                   Segment,
-  IN UINT8                    BusNum,
-  IN UINT8                    DevNum,
-  IN UINT8                    FuncNum,
+  IN UINT16                   Seg,
+  IN UINT8                    Bus,
+  IN UINT8                    Dev,
+  IN UINT8                    Fun,
   IN BOOLEAN                  IsBridge
   );
 

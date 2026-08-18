@@ -28,9 +28,9 @@ VisitAllDevice (
 
   Options = (PCI_CLI_OPTIONS *)Context;
 
-  DisplayDeviceName (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, 0, Node->IsPcie);
-  DumpDeviceRegisters (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Options->ReadType, Node->IsPcie, Options->ExtendFlag);
-  DumpBar (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Node->IsBridge);
+  DisplayDeviceName (SegmentTable, Node->Seg, Node->Bus, Node->Dev, Node->Fun, 0, Node->IsPcie);
+  DumpDeviceRegisters (SegmentTable, Node->Seg, Node->Bus, Node->Dev, Node->Fun, Options->ReadType, Node->IsPcie, Options->ExtendFlag);
+  DumpBar (SegmentTable, Node->Seg, Node->Bus, Node->Dev, Node->Fun, Node->IsBridge);
 }
 
 /**
@@ -46,7 +46,7 @@ VisitTreeDevice (
   IN VOID                     *Context
   )
 {
-  DisplayDeviceName (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Depth, Node->IsPcie);
+  DisplayDeviceName (SegmentTable, Node->Seg, Node->Bus, Node->Dev, Node->Fun, Depth, Node->IsPcie);
 }
 
 EFI_STATUS
@@ -83,10 +83,10 @@ PciUtilEntryPoint (
     {
       BOOLEAN  IsPcie;
 
-      IsPcie = IsPcieDevice (&SegmentTable, Options.Segment, Options.Bus, Options.Dev, Options.Func);
-      DisplayDeviceName (&SegmentTable, Options.Segment, Options.Bus, Options.Dev, Options.Func, 0, IsPcie);
-      DumpDeviceRegisters (&SegmentTable, Options.Segment, Options.Bus, Options.Dev, Options.Func, Options.ReadType, IsPcie, Options.ExtendFlag);
-      DumpBar (&SegmentTable, Options.Segment, Options.Bus, Options.Dev, Options.Func, FALSE);
+      IsPcie = IsPcieDevice (&SegmentTable, Options.Seg, Options.Bus, Options.Dev, Options.Fun);
+      DisplayDeviceName (&SegmentTable, Options.Seg, Options.Bus, Options.Dev, Options.Fun, 0, IsPcie);
+      DumpDeviceRegisters (&SegmentTable, Options.Seg, Options.Bus, Options.Dev, Options.Fun, Options.ReadType, IsPcie, Options.ExtendFlag);
+      DumpBar (&SegmentTable, Options.Seg, Options.Bus, Options.Dev, Options.Fun, FALSE);
       break;
     }
 

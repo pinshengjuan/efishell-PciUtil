@@ -81,7 +81,7 @@ BuildSegmentTable (
   }
 
   for (Index = 0; Index < McfgEntryCount; Index++) {
-    Table->Segments[Index].Segment  = McfgEntry[Index].PciSegmentGroupNumber;
+    Table->Segments[Index].Seg      = McfgEntry[Index].PciSegmentGroupNumber;
     Table->Segments[Index].EcamBase = McfgEntry[Index].BaseAddress;
     Table->Segments[Index].StartBus = McfgEntry[Index].StartBusNumber;
     Table->Segments[Index].EndBus   = McfgEntry[Index].EndBusNumber;
@@ -106,13 +106,13 @@ FreeSegmentTable (
 UINT64
 FindEcamBaseForSegment (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment
+  IN UINT16                   Seg
   )
 {
   UINTN  Index;
 
   for (Index = 0; Index < Table->Count; Index++) {
-    if (Table->Segments[Index].Segment == Segment) {
+    if (Table->Segments[Index].Seg == Seg) {
       return Table->Segments[Index].EcamBase;
     }
   }
@@ -121,47 +121,47 @@ FindEcamBaseForSegment (
 }
 
 /**
-  Compute the ECAM address for a Bus/Dev/Func/Register, or return 0 if this
+  Compute the ECAM address for a Bus/Dev/Fun/Register, or return 0 if this
   segment has no known ECAM base.
 **/
 STATIC
 UINT64
 GetEcamAddress (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   )
 {
   UINT64  Base;
 
-  Base = FindEcamBaseForSegment (Table, Segment);
+  Base = FindEcamBaseForSegment (Table, Seg);
   if (Base == 0) {
     return 0;
   }
 
-  return Base + ((UINT64)Bus << 20) + ((UINT64)Dev << 15) + ((UINT64)Func << 12) + Register;
+  return Base + ((UINT64)Bus << 20) + ((UINT64)Dev << 15) + ((UINT64)Fun << 12) + Register;
 }
 
 UINT8
 PciCfgRead8 (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   )
 {
   UINT64  EcamAddress;
 
-  if ((Segment == 0) && (Register < 0x100)) {
-    return PciRead8 (PCI_LIB_ADDRESS (Bus, Dev, Func, Register));
+  if ((Seg == 0) && (Register < 0x100)) {
+    return PciRead8 (PCI_LIB_ADDRESS (Bus, Dev, Fun, Register));
   }
 
-  EcamAddress = GetEcamAddress (Table, Segment, Bus, Dev, Func, Register);
+  EcamAddress = GetEcamAddress (Table, Seg, Bus, Dev, Fun, Register);
   if (EcamAddress == 0) {
     return 0xFF;
   }
@@ -172,20 +172,20 @@ PciCfgRead8 (
 UINT16
 PciCfgRead16 (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   )
 {
   UINT64  EcamAddress;
 
-  if ((Segment == 0) && (Register < 0x100)) {
-    return PciRead16 (PCI_LIB_ADDRESS (Bus, Dev, Func, Register));
+  if ((Seg == 0) && (Register < 0x100)) {
+    return PciRead16 (PCI_LIB_ADDRESS (Bus, Dev, Fun, Register));
   }
 
-  EcamAddress = GetEcamAddress (Table, Segment, Bus, Dev, Func, Register);
+  EcamAddress = GetEcamAddress (Table, Seg, Bus, Dev, Fun, Register);
   if (EcamAddress == 0) {
     return 0xFFFF;
   }
@@ -196,20 +196,20 @@ PciCfgRead16 (
 UINT32
 PciCfgRead32 (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   )
 {
   UINT64  EcamAddress;
 
-  if ((Segment == 0) && (Register < 0x100)) {
-    return PciRead32 (PCI_LIB_ADDRESS (Bus, Dev, Func, Register));
+  if ((Seg == 0) && (Register < 0x100)) {
+    return PciRead32 (PCI_LIB_ADDRESS (Bus, Dev, Fun, Register));
   }
 
-  EcamAddress = GetEcamAddress (Table, Segment, Bus, Dev, Func, Register);
+  EcamAddress = GetEcamAddress (Table, Seg, Bus, Dev, Fun, Register);
   if (EcamAddress == 0) {
     return 0xFFFFFFFF;
   }

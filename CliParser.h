@@ -28,10 +28,10 @@ typedef enum {
 typedef struct {
   PCI_COMMAND_MODE    Mode;
   BOOLEAN             ExtendFlag;   // "-x" was given - dump 0x100-0xFFF for PCIe devices too
-  UINT16              Segment;      // defaults to 0 if the address omitted "segment:"
+  UINT16              Seg;          // defaults to 0 if the address omitted "segment:"
   UINT8               Bus;
   UINT8               Dev;
-  UINT8               Func;
+  UINT8               Fun;
   UINT32              ReadType;     // 8, 16 or 32 (only meaningful for PciCmdSingle/PciCmdAll)
 } PCI_CLI_OPTIONS;
 

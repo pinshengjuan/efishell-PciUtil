@@ -13,7 +13,7 @@
 #include <Uefi.h>
 
 typedef struct {
-  UINT16    Segment;
+  UINT16    Seg;
   UINT64    EcamBase;
   UINT8     StartBus;
   UINT8     EndBus;
@@ -54,7 +54,7 @@ FreeSegmentTable (
 UINT64
 FindEcamBaseForSegment (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment
+  IN UINT16                   Seg
   );
 
 //
@@ -68,30 +68,30 @@ FindEcamBaseForSegment (
 UINT8
 PciCfgRead8 (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   );
 
 UINT16
 PciCfgRead16 (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   );
 
 UINT32
 PciCfgRead32 (
   IN CONST PCI_SEGMENT_TABLE  *Table,
-  IN UINT16                   Segment,
+  IN UINT16                   Seg,
   IN UINT8                    Bus,
   IN UINT8                    Dev,
-  IN UINT8                    Func,
+  IN UINT8                    Fun,
   IN UINT16                   Register
   );
 
