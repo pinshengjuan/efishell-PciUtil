@@ -42,53 +42,61 @@ IsPcieDevice (
 }
 
 /**
-  Create one NODE and append it to the tail of List in O(1).
+  Allocate and initialize one NODE. Returns NULL on allocation failure.
 **/
 STATIC
-VOID
-AppendNode (
-  IN OUT PCI_DEVICE_LIST  *List,
-  IN     UINT16           Segment,
-  IN     UINT8            Bus,
-  IN     UINT8            Dev,
-  IN     UINT8            Fun,
-  IN     BOOLEAN          IsPcie,
-  IN     BOOLEAN          IsBridge,
-  IN     UINT8            IndentNum
+NODE *
+CreateNode (
+  IN UINT16   Segment,
+  IN UINT8    Bus,
+  IN UINT8    Dev,
+  IN UINT8    Fun,
+  IN BOOLEAN  IsPcie,
+  IN BOOLEAN  IsBridge
   )
 {
   NODE  *Node;
 
   Node = AllocateZeroPool (sizeof (NODE));
   if (Node == NULL) {
-    return;
+    return NULL;
   }
 
-  Node->Segment   = Segment;
-  Node->Bus       = Bus;
-  Node->Dev       = Dev;
-  Node->Fun       = Fun;
-  Node->IsPcie    = IsPcie;
-  Node->IsBridge  = IsBridge;
-  Node->IndentNum = IndentNum;
-  Node->Next      = NULL;
+  Node->Segment = Segment;
+  Node->Bus     = Bus;
+  Node->Dev     = Dev;
+  Node->Fun     = Fun;
+  Node->IsPcie  = IsPcie;
+  Node->IsBridge = IsBridge;
+  return Node;
+}
 
-  if (List->Tail == NULL) {
-    List->Head = Node;
-  } else {
-    List->Tail->Next = Node;
+/**
+  Walk a NextSibling chain to its last node. Returns NULL if Node is NULL.
+**/
+STATIC
+NODE *
+LastSibling (
+  IN NODE  *Node
+  )
+{
+  if (Node == NULL) {
+    return NULL;
   }
 
-  List->Tail = Node;
+  while (Node->NextSibling != NULL) {
+    Node = Node->NextSibling;
+  }
+
+  return Node;
 }
 
 VOID
 ScanPciBus (
   IN     CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN OUT PCI_DEVICE_LIST          *List,
+  OUT    NODE                     **SubtreeHead,
   IN     UINT16                   Segment,
-  IN     UINT8                    BusNum,
-  IN     UINT8                    IndentNum
+  IN     UINT8                    BusNum
   )
 {
   UINT8    DevNum;
@@ -99,6 +107,12 @@ ScanPciBus (
   UINT8    MultiFunBit;
   BOOLEAN  IsBridgeFlag;
   BOOLEAN  IsPcie;
+  NODE     *Head;
+  NODE     *Tail;
+  NODE     *NewNode;
+
+  Head = NULL;
+  Tail = NULL;
 
   for (DevNum = 0; DevNum <= 0x1F; DevNum++) {
     MultiFunBit = 0;
@@ -120,14 +134,28 @@ ScanPciBus (
 
       IsBridgeFlag = (PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x0E) & 0x1) != 0;
       IsPcie       = IsPcieDevice (SegmentTable, Segment, BusNum, DevNum, FuncNum);
-      AppendNode (List, Segment, BusNum, DevNum, FuncNum, IsPcie, IsBridgeFlag, IndentNum);
+
+      NewNode = CreateNode (Segment, BusNum, DevNum, FuncNum, IsPcie, IsBridgeFlag);
+      if (NewNode == NULL) {
+        continue;
+      }
+
+      if (Tail == NULL) {
+        Head = NewNode;
+      } else {
+        Tail->NextSibling = NewNode;
+      }
+
+      Tail = NewNode;
 
       if (IsBridgeFlag) {
         SecondBus = PciCfgRead8 (SegmentTable, Segment, BusNum, DevNum, FuncNum, 0x19);
-        ScanPciBus (SegmentTable, List, Segment, SecondBus, IndentNum + 1);
+        ScanPciBus (SegmentTable, &NewNode->FirstChild, Segment, SecondBus);
       }
     }
   }
+
+  *SubtreeHead = Head;
 }
 
 VOID
@@ -137,15 +165,72 @@ ScanAllSegments (
   )
 {
   UINTN  Index;
+  NODE   *SegRoot;
+  NODE   *Tail;
+
+  List->Root = NULL;
 
   if (SegmentTable->Count == 0) {
     // No MCFG table - assume Segment 0 only, reachable via legacy CF8 access.
-    ScanPciBus (SegmentTable, List, 0, 0, 0);
+    ScanPciBus (SegmentTable, &List->Root, 0, 0);
     return;
   }
 
+  Tail = NULL;
   for (Index = 0; Index < SegmentTable->Count; Index++) {
-    ScanPciBus (SegmentTable, List, SegmentTable->Segments[Index].Segment, SegmentTable->Segments[Index].StartBus, 0);
+    ScanPciBus (SegmentTable, &SegRoot, SegmentTable->Segments[Index].Segment, SegmentTable->Segments[Index].StartBus);
+    if (SegRoot == NULL) {
+      continue;
+    }
+
+    if (Tail == NULL) {
+      List->Root = SegRoot;
+    } else {
+      Tail->NextSibling = SegRoot;
+    }
+
+    Tail = LastSibling (SegRoot);
+  }
+}
+
+VOID
+PciTreeWalk (
+  IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
+  IN NODE                     *Node,
+  IN UINT8                    Depth,
+  IN PCI_NODE_VISITOR         Visitor,
+  IN VOID                     *Context
+  )
+{
+  while (Node != NULL) {
+    Visitor (SegmentTable, Node, Depth, Context);
+    if (Node->FirstChild != NULL) {
+      PciTreeWalk (SegmentTable, Node->FirstChild, Depth + 1, Visitor, Context);
+    }
+
+    Node = Node->NextSibling;
+  }
+}
+
+/**
+  Recursively free Node, its FirstChild subtree, and its NextSibling chain.
+**/
+STATIC
+VOID
+FreeSubtree (
+  IN NODE  *Node
+  )
+{
+  NODE  *NextSib;
+
+  while (Node != NULL) {
+    NextSib = Node->NextSibling;
+    if (Node->FirstChild != NULL) {
+      FreeSubtree (Node->FirstChild);
+    }
+
+    gBS->FreePool (Node);
+    Node = NextSib;
   }
 }
 
@@ -154,13 +239,6 @@ FreeDeviceList (
   IN OUT PCI_DEVICE_LIST  *List
   )
 {
-  NODE  *Node;
-
-  while (List->Head != NULL) {
-    Node       = List->Head;
-    List->Head = Node->Next;
-    gBS->FreePool (Node);
-  }
-
-  List->Tail = NULL;
+  FreeSubtree (List->Root);
+  List->Root = NULL;
 }

@@ -14,14 +14,40 @@ typedef struct _NODE {
   UINT8           Fun;
   BOOLEAN         IsPcie;
   BOOLEAN         IsBridge;
-  UINT8           IndentNum;
-  struct _NODE    *Next;
+  struct _NODE    *FirstChild;   // First device behind this node (bridges only).
+  struct _NODE    *NextSibling;  // Next device at the same tree level.
 } NODE;
 
 typedef struct {
-  NODE    *Head;
-  NODE    *Tail;
+  NODE    *Root;   // First top-level sibling (a root-bus device of some segment).
 } PCI_DEVICE_LIST;
+
+/**
+  Called once per node by PciTreeWalk, in the same order a depth-first
+  pre-order traversal visits them (a node before its children, children
+  before its next sibling).
+
+  @param  Depth  How many bridge hops deep Node is (0 = a root-bus device).
+**/
+typedef VOID (EFIAPI *PCI_NODE_VISITOR)(
+  IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
+  IN NODE                     *Node,
+  IN UINT8                    Depth,
+  IN VOID                     *Context OPTIONAL
+  );
+
+/**
+  Recursively walk Node and its FirstChild/NextSibling tree in pre-order,
+  invoking Visitor on each node.
+**/
+VOID
+PciTreeWalk (
+  IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
+  IN NODE                     *Node,
+  IN UINT8                    Depth,
+  IN PCI_NODE_VISITOR         Visitor,
+  IN VOID                     *Context OPTIONAL
+  );
 
 /**
   Check whether Status Register bit4 (Capabilities List) is set and, if so,
@@ -41,21 +67,22 @@ IsPcieDevice (
 
 /**
   Recursively scan a PCI bus (and any bus reachable through a bridge on it)
-  within one segment, appending one NODE per device/function found to List.
+  within one segment, building a NODE tree (FirstChild/NextSibling) for every
+  device/function found.
 
   @param  SegmentTable  Segment/ECAM info, used for reads beyond legacy CF8 range.
-  @param  List          The list to append discovered devices to.
+  @param  SubtreeHead   On return, the head of the NextSibling chain of devices
+                         found directly on BusNum (their descendants, if any,
+                         hang off each node's FirstChild).
   @param  Segment       The PCI Segment Group to scan.
   @param  BusNum        The bus number to scan.
-  @param  IndentNum     Tree-display indent level for devices found on this bus.
 **/
 VOID
 ScanPciBus (
   IN     CONST PCI_SEGMENT_TABLE  *SegmentTable,
-  IN OUT PCI_DEVICE_LIST          *List,
+  OUT    NODE                     **SubtreeHead,
   IN     UINT16                   Segment,
-  IN     UINT8                    BusNum,
-  IN     UINT8                    IndentNum
+  IN     UINT8                    BusNum
   );
 
 /**

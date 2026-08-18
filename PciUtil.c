@@ -10,6 +10,45 @@
 #include "PciConfigAccess.h"
 #include "RegisterDump.h"
 
+/**
+  PciTreeWalk visitor for "all": dumps full config space + BARs for every
+  device, flat (no indentation).
+**/
+STATIC
+VOID
+EFIAPI
+VisitAllDevice (
+  IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
+  IN NODE                     *Node,
+  IN UINT8                    Depth,
+  IN VOID                     *Context
+  )
+{
+  PCI_CLI_OPTIONS  *Options;
+
+  Options = (PCI_CLI_OPTIONS *)Context;
+
+  DisplayDeviceName (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, 0, Node->IsPcie);
+  DumpDeviceRegisters (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Options->ReadType, Node->IsPcie, Options->ExtendFlag);
+  DumpBar (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Node->IsBridge);
+}
+
+/**
+  PciTreeWalk visitor for "pcitree": prints one indented line per device.
+**/
+STATIC
+VOID
+EFIAPI
+VisitTreeDevice (
+  IN CONST PCI_SEGMENT_TABLE  *SegmentTable,
+  IN NODE                     *Node,
+  IN UINT8                    Depth,
+  IN VOID                     *Context
+  )
+{
+  DisplayDeviceName (SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Depth, Node->IsPcie);
+}
+
 EFI_STATUS
 EFIAPI
 PciUtilEntryPoint (
@@ -20,7 +59,6 @@ PciUtilEntryPoint (
   PCI_CLI_OPTIONS     Options;
   PCI_SEGMENT_TABLE   SegmentTable;
   PCI_DEVICE_LIST     List;
-  NODE                 *Node;
 
   switch (ParseArguments (&Options)) {
     case PciParseHelp:
@@ -53,19 +91,11 @@ PciUtilEntryPoint (
     }
 
     case PciCmdAll:
-      for (Node = List.Head; Node != NULL; Node = Node->Next) {
-        DisplayDeviceName (&SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, 0, Node->IsPcie);
-        DumpDeviceRegisters (&SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Options.ReadType, Node->IsPcie, Options.ExtendFlag);
-        DumpBar (&SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Node->IsBridge);
-      }
-
+      PciTreeWalk (&SegmentTable, List.Root, 0, VisitAllDevice, &Options);
       break;
 
     case PciCmdTree:
-      for (Node = List.Head; Node != NULL; Node = Node->Next) {
-        DisplayDeviceName (&SegmentTable, Node->Segment, Node->Bus, Node->Dev, Node->Fun, Node->IndentNum, Node->IsPcie);
-      }
-
+      PciTreeWalk (&SegmentTable, List.Root, 0, VisitTreeDevice, NULL);
       break;
 
     default:
